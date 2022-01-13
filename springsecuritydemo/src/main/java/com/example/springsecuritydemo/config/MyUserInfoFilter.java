@@ -9,7 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -57,6 +56,10 @@ public class MyUserInfoFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     private void checkVerifyCode(String code, HttpServletRequest request) throws AuthenticationException {
+        //先去除验证码的功能
+        if (1 == 1) {
+            return;
+        }
         Object sessionCode = request.getSession().getAttribute("code");
         if (ObjectUtils.isEmpty(code) || ObjectUtils.isEmpty(sessionCode) || !Objects.equals(sessionCode, code)) {
             //验证码不相等

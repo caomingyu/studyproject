@@ -2,7 +2,6 @@ package com.example.springsecuritydemo.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
@@ -15,8 +14,18 @@ public class HelloController {
         return "Hello Study Spring Security";
     }
 
+    @GetMapping("/admin/hello")
+    public String helloForAdminRole() {
+        return "For admin : Hello Study Spring Security";
+    }
+
+    @GetMapping("/guest/hello")
+    public String helloForGuestRole() {
+        return "For guest : Hello Study Spring Security";
+    }
+
     @PostMapping("/loginSuccess")
-    public String loginSuccess(){
+    public String loginSuccess() {
         return "redirect:/hello";
     }
 

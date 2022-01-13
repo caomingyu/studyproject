@@ -1,20 +1,25 @@
 package com.example.springsecuritydemo.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.code.kaptcha.Producer;
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -22,10 +27,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 @Configuration
@@ -48,13 +52,50 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      * @param auth
      * @throws Exception
      */
+//    @Override
+//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        //在内存中定义用户、密码、角色信息
+//        auth.inMemoryAuthentication()
+//                .withUser("cmy").password("123456").roles("admin")
+//                .and()
+//                .withUser("guest").password("123").roles("guest");
+//    }
+
+//    /**
+//     * 通过重写userDetailService()方法,构建用户信息,并返回userDetailService实例
+//     *
+//     * @return
+//     */
+//    @Override
+//    protected UserDetailsService userDetailsService() {
+//        InMemoryUserDetailsManager userDetailsManager = new InMemoryUserDetailsManager();
+//        userDetailsManager.createUser(User.withUsername("cmy").password("123456").roles("admin").build());
+//        userDetailsManager.createUser(User.withUsername("guest").password("123").roles("guest").build());
+//        return userDetailsManager;
+//    }
+
+    @Autowired
+    DataSource dataSource;
+
+    /**
+     * 通过重写userDetailService()方法,从数据库读取用户信息
+     *
+     * @return
+     */
+    //这里要加一个@Bean,将其注册为Bean,否则不会生效
+    @Bean
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        //在内存中定义用户、密码、角色信息
-        auth.inMemoryAuthentication()
-                .withUser("cmy").password("123456").roles("admin")
-                .and()
-                .withUser("guest").password("123").roles("guest");
+    protected UserDetailsService userDetailsService() {
+        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
+        jdbcUserDetailsManager.setDataSource(dataSource);
+        //这里都是通过调用security已经写好的sql去实现的
+        if (!jdbcUserDetailsManager.userExists("cmy")) {
+            jdbcUserDetailsManager.createUser(User.withUsername("cmy").password("123456").roles("admin").build());
+        }
+        if (!jdbcUserDetailsManager.userExists("guest")) {
+            jdbcUserDetailsManager.createUser(User.withUsername("guest").password("123").roles("guest").build());
+        }
+        return jdbcUserDetailsManager;
     }
 
     /**
@@ -81,27 +122,27 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         myUserInfoFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
             @Override
             public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-//                response.sendRedirect("/hello");
-                Map<String, Object> ret = new HashMap<>(8);
-                ret.put("code", 200);
-                ret.put("msg", "登录成功");
-                ObjectMapper objectMapper = new ObjectMapper();
-                String json = objectMapper.writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(ret);
-                writeResponse(json, response);
+                response.sendRedirect("/index.html");
+//                Map<String, Object> ret = new HashMap<>(8);
+//                ret.put("code", 200);
+//                ret.put("msg", "登录成功");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String json = objectMapper.writerWithDefaultPrettyPrinter()
+//                        .writeValueAsString(ret);
+//                writeResponse(json, response);
             }
         });
         myUserInfoFilter.setAuthenticationFailureHandler(new AuthenticationFailureHandler() {
             @Override
             public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-//                response.sendRedirect("/login.html");
-                Map<String, Object> ret = new HashMap<>(8);
-                ret.put("code", 999);
-                ret.put("msg", exception.getMessage());
-                ObjectMapper objectMapper = new ObjectMapper();
-                String json = objectMapper.writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(ret);
-                writeResponse(json, response);
+                response.sendRedirect("/login.html");
+//                Map<String, Object> ret = new HashMap<>(8);
+//                ret.put("code", 999);
+//                ret.put("msg", exception.getMessage());
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String json = objectMapper.writerWithDefaultPrettyPrinter()
+//                        .writeValueAsString(ret);
+//                writeResponse(json, response);
             }
         });
         return myUserInfoFilter;
@@ -124,6 +165,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
+                //配置接口路由权限
+                .antMatchers("/admin/**").hasRole("admin")
+                .antMatchers("/guest/**").hasRole("guest")
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
@@ -147,6 +191,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .logout()
                 //指定退出接口地址,这里是GET请求
                 .logoutUrl("/logout")
+                .logoutSuccessUrl("/login.html")
                 //指定退出接口地址,这里是POST请求的实现方式
 //                .logoutRequestMatcher(new AntPathRequestMatcher("/logout","POST"));
                 //清楚cookie
@@ -173,5 +218,18 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         DefaultKaptcha defaultKaptcha = new DefaultKaptcha();
         defaultKaptcha.setConfig(config);
         return defaultKaptcha;
+    }
+
+    /**
+     * 角色继承
+     *
+     * @return
+     */
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+        //固定规则 ROLE_(前缀) + 角色 +  >  +
+        roleHierarchy.setHierarchy("ROLE_admin > ROLE_guest");
+        return roleHierarchy;
     }
 }
