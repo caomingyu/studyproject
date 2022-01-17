@@ -1,11 +1,14 @@
 package com.example.springsecuritydemo;
 
 import lombok.extern.slf4j.Slf4j;
+import org.mybatis.spring.annotation.MapperScan;
+import org.mybatis.spring.annotation.MapperScans;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@MapperScan(basePackages = {"com.example.springsecuritydemo.mapper"})
 @Slf4j
 public class SpringsecuritydemoApplication implements CommandLineRunner {
 
