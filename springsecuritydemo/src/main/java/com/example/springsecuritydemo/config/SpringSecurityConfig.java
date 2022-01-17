@@ -1,8 +1,10 @@
 package com.example.springsecuritydemo.config;
 
+import com.example.springsecuritydemo.service.impl.SecurityScUserDetailServiceImpl;
 import com.google.code.kaptcha.Producer;
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Properties;
 
+@Slf4j
 @Configuration
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -77,25 +80,39 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     DataSource dataSource;
 
+//    /**
+//     * 通过重写userDetailService()方法,从数据库读取用户信息
+//     *
+//     * @return
+//     */
+//    //这里要加一个@Bean,将其注册为Bean,否则不会生效
+//    @Bean
+//    @Override
+//    protected UserDetailsService userDetailsService() {
+//        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
+//        jdbcUserDetailsManager.setDataSource(dataSource);
+//        //这里都是通过调用security已经写好的sql去实现的
+//        if (!jdbcUserDetailsManager.userExists("cmy")) {
+//            jdbcUserDetailsManager.createUser(User.withUsername("cmy").password("123456").roles("admin").build());
+//        }
+//        if (!jdbcUserDetailsManager.userExists("guest")) {
+//            jdbcUserDetailsManager.createUser(User.withUsername("guest").password("123").roles("guest").build());
+//        }
+//        return jdbcUserDetailsManager;
+//    }
+
+    @Autowired
+    SecurityScUserDetailServiceImpl userDetailService;
+
     /**
-     * 通过重写userDetailService()方法,从数据库读取用户信息
+     * 自己实现了userDetailService,通过重写的方式来让Spring Security来调用我们自己的userDetailService
      *
-     * @return
+     * @param auth
+     * @throws Exception
      */
-    //这里要加一个@Bean,将其注册为Bean,否则不会生效
-    @Bean
     @Override
-    protected UserDetailsService userDetailsService() {
-        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
-        jdbcUserDetailsManager.setDataSource(dataSource);
-        //这里都是通过调用security已经写好的sql去实现的
-        if (!jdbcUserDetailsManager.userExists("cmy")) {
-            jdbcUserDetailsManager.createUser(User.withUsername("cmy").password("123456").roles("admin").build());
-        }
-        if (!jdbcUserDetailsManager.userExists("guest")) {
-            jdbcUserDetailsManager.createUser(User.withUsername("guest").password("123").roles("guest").build());
-        }
-        return jdbcUserDetailsManager;
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailService);
     }
 
     /**
@@ -135,6 +152,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         myUserInfoFilter.setAuthenticationFailureHandler(new AuthenticationFailureHandler() {
             @Override
             public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+                log.error("登录失败", exception);
                 response.sendRedirect("/login.html");
 //                Map<String, Object> ret = new HashMap<>(8);
 //                ret.put("code", 999);

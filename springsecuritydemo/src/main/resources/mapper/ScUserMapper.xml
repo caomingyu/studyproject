@@ -101,4 +101,15 @@
       status = #{status,jdbcType=VARCHAR}
     where id = #{id,jdbcType=INTEGER}
   </update>
+  <select id="selectList" resultMap="BaseResultMap" parameterType="com.example.springsecuritydemo.model.ScUser">
+    select
+    <include refid="Base_Column_List" />
+    from sc_user
+    <where>
+      status = '1'
+      <if test="name != null and name !=''">
+        and name = #{name}
+      </if>
+    </where>
+  </select>
 </mapper>
