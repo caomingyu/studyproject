@@ -8,12 +8,13 @@
     <result column="age" property="age" jdbcType="INTEGER" />
     <result column="sex" property="sex" jdbcType="VARCHAR" />
     <result column="status" property="status" jdbcType="VARCHAR" />
+    <result column="regis_date" property="regisDate" jdbcType="TIMESTAMP" />
   </resultMap>
   <sql id="Base_Column_List" >
-    id, name, password, age, sex, status
+    id, name, password, age, sex, status,regis_date
   </sql>
   <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
-    select 
+    select
     <include refid="Base_Column_List" />
     from sc_user
     where id = #{id,jdbcType=INTEGER}
@@ -23,9 +24,9 @@
     where id = #{id,jdbcType=INTEGER}
   </delete>
   <insert id="insert" parameterType="com.example.springsecuritydemo.model.ScUser" >
-    insert into sc_user (id, name, password, 
+    insert into sc_user (id, name, password,
       age, sex, status)
-    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, 
+    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
       #{age,jdbcType=INTEGER}, #{sex,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR})
   </insert>
   <insert id="insertSelective" parameterType="com.example.springsecuritydemo.model.ScUser" >

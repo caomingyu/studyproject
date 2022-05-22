@@ -50,6 +50,9 @@ public class MyUserInfoFilter extends UsernamePasswordAuthenticationFilter {
             return this.getAuthenticationManager().authenticate(authRequest);
         } else {
             //form表单形式
+            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+                log.info("param key:{},value:{}", entry.getKey(), entry.getValue());
+            }
             checkVerifyCode(request.getParameter("code"), request);
             return super.attemptAuthentication(request, response);
         }

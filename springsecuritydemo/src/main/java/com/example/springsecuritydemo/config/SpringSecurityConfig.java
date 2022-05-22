@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.security.authentication.RememberMeAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -25,6 +26,8 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -112,7 +115,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailService);
+        auth.userDetailsService(userDetailService)
+                .and()
+                .authenticationProvider((new RememberMeAuthenticationProvider("cmy")));
     }
 
     /**
@@ -136,6 +141,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         myUserInfoFilter.setUsernameParameter("uname");
         myUserInfoFilter.setPasswordParameter("passwd");
         myUserInfoFilter.setFilterProcessesUrl("/doLogin");
+        myUserInfoFilter.setRememberMeServices(new TokenBasedRememberMeServices("cmy",userDetailService));
         myUserInfoFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandler() {
             @Override
             public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -216,8 +222,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .deleteCookies("name")
                 .permitAll()
                 .and()
+                .rememberMe()
+                .key("cmy")
+                .and()
                 .csrf().disable()
-                .addFilterAt(userInfoFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAt(userInfoFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilter(new RememberMeAuthenticationFilter(authenticationManager(), userInfoFilter().getRememberMeServices()));
     }
 
     /**

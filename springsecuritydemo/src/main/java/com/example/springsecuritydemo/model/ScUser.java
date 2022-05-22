@@ -2,6 +2,8 @@ package com.example.springsecuritydemo.model;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class ScUser {
     private Integer id;
@@ -30,4 +32,9 @@ public class ScUser {
      * 是否启用 1:启用 0:禁用
      */
     private String status;
+
+    /**
+     * 注册日期
+     */
+    private LocalDateTime regisDate;
 }
